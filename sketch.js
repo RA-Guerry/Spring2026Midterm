@@ -1,23 +1,23 @@
 let gameState = "menu";
 let controllerState = "map";
 let hp = 3;
-console.log(hp);
+press = true;
 
- // ===== PLAYER VARIABLES =====
-  let px = 0;
-  let py = 0;
-  // ===== Finish Variables =====
-  let fx = 5;
-  let fy = 5;
-  // // ===== Enemy Variables =====
-  let mx = 1;
-  let my = 3;
-   // ===== Button Variables =====
-  let bx = 9;
-  let by = 19;
+// ===== PLAYER VARIABLES =====
+let px = 0;
+let py = 0;
+// ===== Finish Variables =====
+let fx = 5;
+let fy = 5;
+// // ===== Enemy Variables =====
+let mx = 10;
+let my = 0;
+// ===== Button Variables =====
+let bx = 9;
+let by = 19;
 
-  let distx = (px - mx);
-  let disty = (py - my);
+let distx = 0;
+let disty = 0;
 
 // ===== MAP =====
 let gridSize = 11;
@@ -47,14 +47,14 @@ function setup() {
 function draw() {
   background(0);
 
-  if (hp == 0){
-        gameState = "quit";
-      }
+  if (hp == 0) {
+    gameState = "quit";
+  }
 
-  if (level == 5){
+  if (level == 5) {
     gameState = "win";
   }
-      
+
   if (gameState === "menu") {
     drawMenu();
   } else if (gameState === "game") {
@@ -62,46 +62,57 @@ function draw() {
     drawInteract();
     drawGrid();
 
-     if (level > 2){
-        monsterAI();
+    if (level > 2) {
+      distx = px - mx;
+      disty = py - my;
+      monsterAI();
+    }
+
+    if (controllerState == "interact") {
+      drawController();
+      drawCoordinates();
+      drawDpad();
+      if (px == bx && py == by) {
+        press = true;
       }
 
-     if (controllerState == "interact") {
-    drawController();
-    drawCoordinates();
-    drawDpad();
-     if ((px == fx && py == fy)){
-      level = level + 1; 
-      if (level == 2){
-        px = 5;
-        py = 0;
+      if (press == true && px == fx && py == fy) {
+        level = level + 1;
+        if (level == 2) {
+          px = 5;
+          py = 0;
+        }
+        if (level == 3) {
+          px = 1;
+          py = 5;
+          mx = 1;
+          my = 3;
+        }
+        if (level == 4) {
+          px = 1;
+          py = 8;
+          mx = 1;
+          my = 1;
+          bx = 9;
+          by = 9;
+          press = false;
+        }
+        controllerState = "map";
       }
-      if (level == 3){
-      px = 1;
-      py = 5;
+      if (level > 2 && px == mx && py == my) {
+        hp = hp - 1;
+        if (level == 3) {
+          px = 1;
+          py = 5;
+          mx = 1;
+          my = 3;
+        }
+        controllerState = "map";
       }
-      if (level == 4){
-      px = 1;
-      py = 8;
-      mx = 1;
-      my = 1;
-      }
-      controllerState = "map";
+    } else if (controllerState == "map") {
+      generateMap();
+      drawLegend();
     }
-     if ((px == mx && py == my)){
-      hp = hp - 1; 
-      if (level == 3){
-      px = 1;
-      py = 5;
-      mx = 1;
-      my = 3;
-      }
-      controllerState = "map";
-    }
-  } else if (controllerState == "map") {
-    generateMap();
-    drawLegend();
-  }
 
     if (isPaused) {
       drawPauseOverlay();
@@ -109,9 +120,9 @@ function draw() {
   } else if (gameState === "quit") {
     drawQuitScreen();
     noLoop();
-  } 
+  }
 
-  if (gameState == "win"){
+  if (gameState == "win") {
     drawWinScreen();
     noLoop();
   }
@@ -139,7 +150,6 @@ function drawMenuButton(btn, label) {
   textSize(16);
   text(label, btn.x, btn.y);
 }
-
 
 function isInside(btn) {
   return (
@@ -259,7 +269,7 @@ function generateMap(type) {
     grid[7][7] = "wall";
     grid[my][mx] = "monster";
     grid[bx][by] = "button";
-}
+  }
 }
 
 // ===== DRAW GRID =====
@@ -273,15 +283,15 @@ function drawGrid() {
     for (let x = 0; x < gridSize; x++) {
       let tile = grid[y][x];
 
-      let col = color(110, 100, 70);
+      let col = color(120, 105, 75);
 
       //determines which tile is which
-      if (tile == "player") col = color(160, 10, 0);
-      if (tile === "finish") col = color(60, 100, 40);
-      if (tile === "wall") col = color(48, 47, 38);
-      if (tile === "trap") col = color(150, 0, 150);
       if (tile === "button") col = color(100, 200, 255);
-      if (tile === "monster") col = color(0, 0, 100);
+      if (tile == "player") col = color(200, 30, 0);
+      if (tile === "finish") col = color(200, 200, 80);
+      if (tile === "wall") col = color(40, 40, 35);
+      if (tile === "trap") col = color(150, 0, 150);
+      if (tile === "monster") col = color(0, 90, 180);
 
       fill(col);
       stroke(0);
@@ -305,114 +315,156 @@ function mousePressed() {
       controllerState = "interact";
     }
   } else if (controllerState === "interact") {
-    if (isInside(DkeyBtn)){
-      console.log(mx,my);
-      if (level > 2){
-        if (grid[mx][my + 1] === "wall"){
-          if (distx > 1){
+    if (isInside(DkeyBtn)) {
+      if (level > 2) {
+        if (grid[mx][my + 1] === "wall") {
+          if (distx > 1) {
             mx = mx + 1;
-            if (mx > 10){mx = 10;}
-          } else if (distx < 0){
+            if (mx > 10) {
+              mx = 10;
+            }
+          } else if (distx < 0) {
             mx = mx - 1;
-            if (mx < 0){mx = 0;}
+            if (mx < 0) {
+              mx = 0;
+            }
           }
         } else {
-          if (disty < 0){
-            my = my + 1;
-            if (my > 10){my = 10;}
-          } else if (disty > -1){
+          if (disty < 0) {
             my = my - 1;
-            if (my < 0){my = 0;}
+            if (my < 0) {
+              my = 0;
+            }
+          } else if (disty > -1) {
+            my = my + 1;
+            if (my > 10) {
+              my = 10;
+            }
+          }
         }
       }
-    }
 
-      if (grid[px][py + 1] === "wall"){} else{
-       py = py + 1;
-       if (py > 10){py = 10;}
-      }
-    }
-    if (isInside(RkeyBtn)){
-      if (level > 2){
-        if (grid[mx + 1][my] === "wall"){
-          if (disty < 1){
-            my = my + 1;
-            if (my > 10){my = 10;}
-          } else if (disty > 0){
-            my = my - 1;
-            if (my < 0){my = 0;}
-          }
-        } else {
-          if (distx < 0){
-            mx = mx + 1;
-            if (mx > 10){mx = 10;}
-          } else if (distx > -1){
-            mx = mx - 1;
-            if (mx < 0){mx = 0;}
+      if (grid[px][py + 1] === "wall") {
+      } else {
+        py = py + 1;
+        if (py > 10) {
+          py = 10;
         }
       }
     }
-      if (grid[px + 1][py] === "wall"){} else{
-       px = px + 1;
-       if (px > 10){px = 10;}
-      }
-    }
-    if (isInside(UkeyBtn)){
-      if (level > 2){
-        if (grid[mx][my - 1] === "wall"){
-          if (distx > 1){
-            mx = mx - 1;
-            if (mx < 0){mx = 0;}
-          } else if (distx < 0){
-            mx = mx + 1;
-            if (mx > 10){mx = 10;}
+    if (isInside(RkeyBtn)) {
+      if (level > 2) {
+        if (grid[mx + 1][my] === "wall") {
+          if (disty < 1) {
+            my = my - 1;
+            if (my < 0) {
+              my = 0;
+            }
+          } else if (disty > 0) {
+            my = my + 1;
+            if (my > 10) {
+              my = 10;
+            }
           }
         } else {
-          if (disty > 0){
-            my = my - 1;
-            if (my < 0){my = 0;}
-          } else if (disty > 1){
-            my = my + 1;
-            if (my > 10){my = 10;}
+          if (distx < 0) {
+            mx = mx - 1;
+            if (mx < 0) {
+              mx = 0;
+            }
+          } else if (distx > -1) {
+            mx = mx + 1;
+            if (mx > 10) {
+              mx = 10;
+            }
+          }
+        }
+      }
+      if (grid[px + 1][py] === "wall") {
+      } else {
+        px = px + 1;
+        if (px > 10) {
+          px = 10;
         }
       }
     }
-      if (grid[px][py - 1] === "wall"){} else{
-      py = py - 1;
-      if (py < 0){py = 0;}
-      }
-    }
-    if (isInside(LkeyBtn)){
-       if (level > 2){
-        if (grid[mx - 1][my] === "wall"){
-          if (disty > 1){
-            my = my + 1;
-            if (my > 10){my = 10;}
-          } else if (disty < 0){
-            my = my - 1;
-            if (my < 0){my = 0;}
+    if (isInside(UkeyBtn)) {
+      if (level > 2) {
+        if (grid[mx][my - 1] === "wall") {
+          if (distx > -1) {
+            mx = mx + 1;
+            if (mx > 10) {
+              mx = 10;
+            }
+          } else if (distx < 0) {
+            mx = mx - 1;
+            if (mx < 0) {
+              mx = 0;
+            }
           }
         } else {
-          if (distx > 0){
-            mx = mx + 1;
-            if (mx > 10){mx = 10;}
-          } else if (distx < 1){
-            mx = mx - 1;
-            if (mx < 0){mx = 0;}
+          if (disty > 0) {
+            my = my + 1;
+            if (my > 10) {
+              my = 10;
+            }
+          } else if (disty < 1) {
+            my = my - 1;
+            if (my < 0) {
+              my = 0;
+            }
+          }
+        }
+      }
+      if (grid[px][py - 1] === "wall") {
+      } else {
+        py = py - 1;
+        if (py < 0) {
+          py = 0;
         }
       }
     }
-     if (grid[px - 1][py] === "wall"){} else{
-      px = px - 1;
-      if (px < 0){px = 0;}
-     }
+    if (isInside(LkeyBtn)) {
+      if (level > 2) {
+        if (grid[mx - 1][my] === "wall") {
+          if (disty > -1) {
+            my = my + 1;
+            if (my > 10) {
+              my = 10;
+            }
+          } else if (disty < 0) {
+            my = my - 1;
+            if (my < 0) {
+              my = 0;
+            }
+          }
+        } else {
+          if (distx > 0) {
+            mx = mx + 1;
+            if (mx > 10) {
+              mx = 10;
+            }
+          } else if (distx < 1) {
+            mx = mx - 1;
+            if (mx < 0) {
+              mx = 0;
+            }
+          }
+        }
+      }
+      if (grid[px - 1][py] === "wall") {
+      } else {
+        px = px - 1;
+        if (px < 0) {
+          px = 0;
+        }
+      }
     }
     if (isInside(interactBtn)) {
       controllerState = "map";
     }
   }
 }
-
 
 // ===== LEGEND =====
 function drawLegend() {
@@ -424,11 +476,11 @@ function drawLegend() {
   fill(255);
   text("LEGEND", x, y - 30);
 
-  drawLegendItem(x, y, color(160, 10, 0), "Player");
-  drawLegendItem(x, y + 25, color(60, 100, 40), "Finish");
-  drawLegendItem(x, y + 50, color(50, 50, 40), "wall");
-  // drawLegendItem(x, y + 100, color(100, 200, 255), "Button");
-  drawLegendItem(x, y + 75, color(0, 0, 100), "Monster");
+  drawLegendItem(x, y, color(200, 30, 0), "Player");
+  drawLegendItem(x, y + 25, color(200, 200, 80), "Finish");
+  drawLegendItem(x, y + 50, color(40, 40, 35), "wall");
+  drawLegendItem(x, y + 100, color(100, 200, 255), "Button");
+  drawLegendItem(x, y + 75, color(0, 90, 180), "Monster");
   // drawLegendItem(x, y + 125, color(150, 0, 150), "Trap");
 }
 
@@ -466,15 +518,15 @@ function drawInteract() {
   textSize(16);
   text("INTERACT", width / 2.1, height - 30);
 
-  if (isInside(interactBtn) && mouseIsPressed){
-  fill(100, 0, 0);
-  stroke(150);
-  rect(width / 2.1, height - 30, 200, 35);
+  if (isInside(interactBtn) && mouseIsPressed) {
+    fill(100, 0, 0);
+    stroke(150);
+    rect(width / 2.1, height - 30, 200, 35);
 
-  noStroke();
-  fill(150);
-  textSize(16);
-  text("INTERACT", width / 2.1, height - 30);
+    noStroke();
+    fill(150);
+    textSize(16);
+    text("INTERACT", width / 2.1, height - 30);
   }
 }
 
@@ -503,48 +555,48 @@ function drawKey(x, y, label) {
   textSize(20);
   text(label, x, y + 2);
 
-  if (isInside(UkeyBtn) && mouseIsPressed){
-  fill(10);
-  stroke(150);
-  rect(330,190,130, 50);
+  if (isInside(UkeyBtn) && mouseIsPressed) {
+    fill(10);
+    stroke(150);
+    rect(330, 190, 130, 50);
 
-  noStroke();
-  fill(150);
-  textSize(20);
-  text("↑",330,190);
+    noStroke();
+    fill(150);
+    textSize(20);
+    text("↑", 330, 190);
   }
 
-    if (isInside(DkeyBtn) && mouseIsPressed){
-  fill(10);
-  stroke(150);
-  rect(330,330,130, 50);
+  if (isInside(DkeyBtn) && mouseIsPressed) {
+    fill(10);
+    stroke(150);
+    rect(330, 330, 130, 50);
 
-  noStroke();
-  fill(150);
-  textSize(20);
-  text("↓",330,330);
+    noStroke();
+    fill(150);
+    textSize(20);
+    text("↓", 330, 330);
   }
 
-    if (isInside(LkeyBtn) && mouseIsPressed){
-  fill(10);
-  stroke(150);
-  rect(230,260,130, 50);
+  if (isInside(LkeyBtn) && mouseIsPressed) {
+    fill(10);
+    stroke(150);
+    rect(230, 260, 130, 50);
 
-  noStroke();
-  fill(150);
-  textSize(20);
-  text("←",230,260);
+    noStroke();
+    fill(150);
+    textSize(20);
+    text("←", 230, 260);
   }
 
-    if (isInside(RkeyBtn) && mouseIsPressed){
-  fill(10);
-  stroke(150);
-  rect(430,260,130, 50);
+  if (isInside(RkeyBtn) && mouseIsPressed) {
+    fill(10);
+    stroke(150);
+    rect(430, 260, 130, 50);
 
-  noStroke();
-  fill(150);
-  textSize(20);
-  text("→",430,260);
+    noStroke();
+    fill(150);
+    textSize(20);
+    text("→", 430, 260);
   }
 }
 
@@ -559,7 +611,7 @@ function drawCoordinates() {
   rectMode(CENTER);
 
   fill(0);
-  stroke(55); 
+  stroke(55);
   rect(330, 115, 220, 60);
 
   noStroke();
@@ -569,11 +621,9 @@ function drawCoordinates() {
   text(`${hp} HP [${px},${py}] Lv${level}`, 330, 115);
 }
 
-function monsterAI(){
-if (isInside(DkeyBtn) && mouseIsPressed){
-  
-  
-}
+function monsterAI() {
+  if (isInside(DkeyBtn) && mouseIsPressed) {
+  }
 }
 
 // ===== PAUSE =====
